@@ -1,2 +1,2 @@
-// Display the number of documents in the collection school
-printjson(db.school.countDocuments());
+// Count
+db.school.count()
