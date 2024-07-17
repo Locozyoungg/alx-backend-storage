@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 """ Main file """
 
-from exercise import Cache
+from exercise import Cache, replay
 
 cache = Cache()
+
+# Test storing different types of data
+cache.store("foo")
+cache.store("bar")
+cache.store(42)
+
+# Replay the history of calls to the store method
+replay(cache.store)
 
 # Test case 1: Storing and retrieving binary data
 data1 = b"first"
