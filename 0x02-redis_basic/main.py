@@ -1,11 +1,36 @@
 #!/usr/bin/env python3
-"""
-Main file
-"""
+""" Main file """
+
 from exercise import Cache
 
+# Initialize the Cache
 cache = Cache()
 
+# Test case 1: Storing and retrieving binary data
+data1 = b"first"
+key1 = cache.store(data1)
+print(key1)
+print(cache.get(key1))
+
+# Test case 2: Counting store method calls
+print(cache.get(cache.store.__qualname__))
+
+# Test case 3: Storing and retrieving binary data
+data2 = b"second"
+key2 = cache.store(data2)
+print(key2)
+print(cache.get(key2))
+
+# Test case 4: Storing and retrieving binary data
+data3 = b"third"
+key3 = cache.store(data3)
+print(key3)
+print(cache.get(key3))
+
+# Verify the call count of the store method
+print(cache.get(cache.store.__qualname__))
+
+# Additional test cases for type conversion
 TEST_CASES = {
     b"foo": None,
     123: int,
