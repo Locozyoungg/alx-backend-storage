@@ -1,52 +1,61 @@
+
 #!/usr/bin/env python3
 """
-Web caching module
+Web cache and URL access tracker using Redis.
 """
-import redis
+
 import requests
+import redis
 from typing import Callable
 
-# Initialize Redis client
-r = redis.Redis()
 
-def count_calls(method: Callable) -> Callable:
-    """Decorator to count the number of calls to a method"""
-    def wrapper(*args, **kwargs):
-        """Wrapper function to increment the count and call the original method"""
-        url = args[0]
-        r.incr(f"count:{url}")
-        return method(*args, **kwargs)
-    return wrapper
+class Cache:
+    """Cache class to interact with Redis."""
 
-def cache_result(method: Callable) -> Callable:
-    """Decorator to cache the result of a method with an expiration time"""
-    def wrapper(*args, **kwargs):
-        """Wrapper function to cache result and call the original method"""
-        url = args[0]
-        cached_result = r.get(url)
-        if cached_result:
-            return cached_result.decode('utf-8')
-        result = method(*args, **kwargs)
-        r.setex(url, 10, result)
-        return result
-    return wrapper
+    def __init__(self):
+        """Initialize the connection to the Redis server."""
+        self._redis = redis.Redis()
 
-@count_calls
-@cache_result
-def get_page(url: str) -> str:
-    """Get the HTML content of a URL and cache it with an expiration time"""
-    response = requests.get(url)
-    return response.text
+    def get_page(self, url: str) -> str:
+        """
+        Get the HTML content of a URL, track access count, and cache with expiration.
+        
+        Args:
+            url (str): The URL to fetch.
+        
+        Returns:
+            str: The HTML content of the URL.
+        """
+        cache_key = f"count:{url}"
+        self._redis.incr(cache_key)
+        
+        cached_page = self._redis.get(url)
+        if cached_page:
+            return cached_page.decode('utf-8')
+        
+        response = requests.get(url)
+        page_content = response.text
+        
+        self._redis.setex(url, 10, page_content)
+        return page_content
+
+    def get_count(self, url: str) -> int:
+        """
+        Get the access count of a URL.
+        
+        Args:
+            url (str): The URL to get the count for.
+        
+        Returns:
+            int: The access count.
+        """
+        count = self._redis.get(f"count:{url}")
+        return int(count) if count else 0
+
 
 if __name__ == "__main__":
-    url = "http://slowwly.robertomurray.co.uk/delay/3000/url/http://www.example.com"
-    print(get_page(url))
-    print(f"Access count: {r.get(f'count:{url}').decode('utf-8')}")
-    # Wait and try again to see if caching works
-    import time
-    time.sleep(5)
-    print(get_page(url))
-    print(f"Access count: {r.get(f'count:{url}').decode('utf-8')}")
-    time.sleep(6)
-    print(get_page(url))
-    print(f"Access count: {r.get(f'count:{url}').decode('utf-8')}")
+    cache = Cache()
+
+    url = "http://slowwly.robertomurray.co.uk"
+    print(cache.get_page(url))
+    print(f"URL accessed {cache.get_count(url)} times")
